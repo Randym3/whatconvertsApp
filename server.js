@@ -18,7 +18,7 @@ app.post('/webhook/whatconverts/create', function(req, res){
     res.json(200);
 });
 
-app.post('/webhook/whatconverts/update', function(req, res){
+app.get('/webhook/whatconverts/update', function(req, res){
     res.json("nice!");
 });
     
