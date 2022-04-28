@@ -4,15 +4,17 @@
   "description": "Webhook for whatconverts triggers",
   "main": "server.js",
   "scripts": {
-    "server": "nodemon server.js/",
+    "server": "nodemon server.js",
     "start": "node server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^0.27.0",
     "cors": "^2.8.5",
     "dotenv": "^16.0.0",
     "express": "^4.18.0",
+    "jsforce": "^1.11.0",
     "nodemailer": "^6.7.3"
   }
 }
