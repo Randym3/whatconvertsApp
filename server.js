@@ -56,7 +56,7 @@ app.post('/webhook/whatconverts/create', function(req, res){
         Company: whatconvertsLead.additional_fields['Company Name'],
         Email: whatconvertsLead.additional_fields['Email'],
         Description: whatconvertsLead.additional_fields['Message'],
-        whatconverts_lead_id: whatconvertsLead.lead_id
+        whatconverts_lead_id__c: whatconvertsLead.lead_id
     }
     salesforceConn.sobject("Lead").create(leadDetails, function(err, ret) {
         if (err || !ret.success) {
@@ -66,7 +66,6 @@ app.post('/webhook/whatconverts/create', function(req, res){
         console.log("Created record id : " + ret.id);
         return res.json(ret);
     });
-    res.json(200);
 });
 
 app.get('/webhook/whatconverts/update', function(req, res){
