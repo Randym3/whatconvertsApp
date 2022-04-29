@@ -67,30 +67,8 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
 });
 
 app.post('/webhook/salesforce/lead/update', function(req, res){
-    const transporter = nodemailer.createTransport({
-        port: 465,               // true for 465, false for other ports
-        host: "smtp.gmail.com",
-           auth: {
-                user: 'menesesrandy33@gmail.com',
-                pass: 'Saxxy333',
-             },
-        secure: true,
-        });
-        
-        const mailData = {
-          from: 'support@randym3.com',  // sender address
-            to: 'menesesrandy@gmail.com',   // list of receivers
-            subject: 'Sending Email using Node.js',
-            text: 'That was easy!',
-            html: `worked`,
-          };
-      
-      transporter.sendMail(mailData, function (err, info) {
-          if(err)
-          console.log(err)
-          else
-          console.log(info);
-      });
+
+        console.log(req.body);
       return res.json(200);
       
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
