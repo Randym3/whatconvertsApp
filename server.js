@@ -66,7 +66,7 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
     }
 });
 
-app.get('/webhook/salesforce/lead/update', function(req, res){
+app.post('/webhook/salesforce/lead/update', function(req, res){
     const transporter = nodemailer.createTransport({
         port: 465,               // true for 465, false for other ports
         host: "smtp.gmail.com",
