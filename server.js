@@ -34,20 +34,6 @@ app.use(cors());
 //     else
 //     console.log(info);
 // });
-async function teest() {
-}
-
-        // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
-        //     auth: {
-        //         username: WHATCONVERTS_API_TOKEN,
-        //         password: WHATCONVERTS_API_SECRET
-        //     }
-        // }).then(data => {
-        //     console.log(data.data);
-        //     res.json(data.data);
-        // }).catch(err=>console.log(err))
-
-teest();
 async function findSalesForceLeadByEmail(email) {
     var records = await salesforceConn.sobject("Lead")
         .find({Email: email})
@@ -55,7 +41,6 @@ async function findSalesForceLeadByEmail(email) {
             if (err) { return res.status(500).json(err) }
             return records
         });
-
     return records.length
 }
 
@@ -75,6 +60,7 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
         Description: whatconvertsLead.additional_fields['Message'],
         whatconverts_lead_id__c: whatconvertsLead.lead_id
     }
+
     var createRes = await salesforceConn.sobject("Lead").create(leadDetails, function(err, ret) {
         if (err || !ret.success) {
             console.log(err);
@@ -83,9 +69,8 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
         //Lead was succesfully created on Salesforce
         return ret
     });
-    console.log(createRes);
-    var res = await findSalesForceLeadByEmail('randy.herok2u@randym3.com');
-
+    var res = await findSalesForceLeadByEmail(whatconvertsLead.additional_fields['Email']);
+    console.log(res);
     //lead found on salesforce by email, update whatconverts lead salesforce additional field to "connected"
     if (res) {
         try {
@@ -96,7 +81,6 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
                     password: WHATCONVERTS_API_SECRET
                 }}
             );
-            console.log(whatconvertsRes);
             return res.status(200)
         } catch (error) {
             console.log(error)
