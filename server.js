@@ -67,10 +67,10 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
 });
 
 app.post('/webhook/salesforce/lead/update', function(req, res){
-    console.log(req.body);
-    // let { newLead, oldLead } = req.body;
-    // console.log(newLead)
-    // console.log(oldLead)
+    let newLead = req.body.new;
+    let oldLead = req.body.old;
+    console.log(newLead)
+    console.log(oldLead)
     return res.json(200);
       
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
