@@ -69,10 +69,10 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
         //Lead was succesfully created on Salesforce
         return ret
     });
-    var res = await findSalesForceLeadByEmail(whatconvertsLead.additional_fields['Email']);
-    console.log(res);
+    var salesForceRes = await findSalesForceLeadByEmail(whatconvertsLead.additional_fields['Email']);
+
     //lead found on salesforce by email, update whatconverts lead salesforce additional field to "connected"
-    if (res) {
+    if (salesForceRes) {
         try {
             var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatconvertsLead.lead_id}`,
                 'additional_fields[SalesForce]=Connected',
