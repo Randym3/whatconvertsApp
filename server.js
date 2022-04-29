@@ -67,9 +67,10 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
 });
 
 app.post('/webhook/salesforce/lead/update', function(req, res){
-
-        console.log(req.body);
-      return res.json(200);
+    let { newLead, oldLead } = req.body;
+    console.log(newLead[0].Email)
+    console.log(oldLead[0].LastName)
+    return res.json(200);
       
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
     //     auth: {
@@ -85,4 +86,3 @@ app.post('/webhook/salesforce/lead/update', function(req, res){
 app.listen(PORT, () => {
   console.log(`Running on port ${PORT}!`)
 })
-
