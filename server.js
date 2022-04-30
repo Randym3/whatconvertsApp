@@ -66,7 +66,7 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
     }
 });
 
-app.post('/webhook/salesforce/lead/update', function(req, res){
+app.post('/webhook/salesforce/lead/update', async function(req, res){
     let newLead = req.body.new;
     let oldLead = req.body.old;
 
