@@ -77,7 +77,7 @@ app.post('/webhook/salesforce/lead/update', async function(req, res){
 
     if (hasNewContact) {
         try {
-            var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatconvertsLead.lead_id}`,
+            var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${oldLead[0].whatconverts_lead_id__c}`,
                 new URLSearchParams({ 
                     'quotable': "yes"
                 }),
