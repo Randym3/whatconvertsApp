@@ -71,8 +71,8 @@ app.post('/webhook/salesforce/lead/update', function(req, res){
     let oldLead = req.body.old;
 
     //If the lead has a new field relating to the Contact object, lets update WhatConverts lead here.
-    console.log(oldLead[9]);
-    console.log(newLead[9]);
+    console.log(oldLead[0]);
+    console.log(newLead[0]);
     var hasNewContact = !oldLead[0].ConvertedContactId && newLead[0].ConvertedContactId;
 
     if (hasNewContact) {
