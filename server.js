@@ -69,10 +69,27 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
 app.post('/webhook/salesforce/lead/update', function(req, res){
     let newLead = req.body.new;
     let oldLead = req.body.old;
-    console.log(newLead)
-    console.log(oldLead)
-    return res.json(200);
-      
+
+    //If the lead has a new field relating to the Contact object, lets update WhatConverts lead here.
+    var hasNewContact = !oldLead[0].ConvertedContactId && newLead[0].ConvertedContactId;
+
+    if (hasNewContact) {
+        try {
+            var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatconvertsLead.lead_id}`,
+                new URLSearchParams({ 
+                    'quotable': "yes"
+                }),
+                {auth: {
+                    username: WHATCONVERTS_API_TOKEN,
+                    password: WHATCONVERTS_API_SECRET
+                }}
+            );
+            return res.status(200).json(whatconvertsRes)
+        } catch (error) {
+            console.log(error)
+            return res.status(500).json(error)
+        }
+    }      
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
     //     auth: {
     //         username: WHATCONVERTS_API_TOKEN,
@@ -87,3 +104,6 @@ app.post('/webhook/salesforce/lead/update', function(req, res){
 app.listen(PORT, () => {
   console.log(`Running on port ${PORT}!`)
 })
+// ConvertedAccountId
+// ConvertedOpportunityId
+// ConvertedContactId
