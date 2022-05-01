@@ -40,10 +40,10 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
                 password: WHATCONVERTS_API_SECRET
             }}
         );
-        return res.send(200)
+        return res.json(200)
     } catch (error) {
         console.log(error)
-        return res.send(500);
+        return res.json(500);
     }    
 });
 
@@ -55,10 +55,21 @@ app.post('/webhook/salesforce/lead/update', async function(req, res) {
     var newContactId = !oldLead[0].ConvertedContactId && newLead[0].ConvertedContactId 
         ? newLead[0].ConvertedContactId : null;
 
-    if (!newContactId) {
+    var newOpportunityId = !oldLead[0].ConvertedOpportunityId && newLead[0].ConvertedOpportunityId 
+        ? newLead[0].ConvertedOpportunityId : null;
+        
+    if (!newContactId && !newOpportunityId) {
         return res.status(200).json({message: "no action required"});
     }
     try {
+        if (newOpportunityId) {
+            let updateFields = {
+                whatconverts_lead_id__c: oldLead[0].whatconverts_lead_id__c
+            }
+            //associate converted opportunity to whatconverts lead
+            var updatedOpportunity = await updateSalesForceObject("Opportunity", newOpportunityId, updateFields)
+        }
+        
         //if there is a new contact or opportunity associated to this lead on salesforce, lets update whatconverts lead with relevant info.
         const data = new URLSearchParams({
             'quotable': "yes"
@@ -71,10 +82,10 @@ app.post('/webhook/salesforce/lead/update', async function(req, res) {
                 password: WHATCONVERTS_API_SECRET
             }}
         );
-        return res.send(200)
+        return res.json(200)
     } catch (error) {
         console.log(error)
-        return res.send(500)
+        return res.json(500)
     }
 
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
@@ -101,6 +112,20 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
 async function createSalesForceObject(object, data) {
     try {
         var record = await salesforceConn.sobject(object).create(data);
+        if (!record.success) return false;
+        return record;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+async function updateSalesForceObject(object, id, data) {
+    try {
+        var record = await salesforceConn.sobject(object).update({
+            Id: id,
+            ...data
+        });
         if (!record.success) return false;
         return record;
     } catch (error) {
