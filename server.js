@@ -117,10 +117,11 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
                 password: WHATCONVERTS_API_SECRET
             }}
         );
+        console.log(whatconvertsRes);
         return res.json(200)
     } catch (error) {
         console.log(error);
-        return res.json(200)
+        return res.json(500)
     }
 });
 
