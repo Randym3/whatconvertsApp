@@ -101,13 +101,28 @@ app.post('/webhook/salesforce/lead/update', async function(req, res) {
 
 // runs every time an opportunity is created or updated
 app.post("/webhook/salesforce/opportunity", async function(req, res) {
-    console.log(req.body);
-    // let opportunity = req.body.new;
-    // let amount = opportunity.Amount;
-    // ...(opportunity.Amount && { 'quote_value': opportunity.Amount }),
-    // console.log(opportunity);
-    return res.send(200)
-})
+    let opportunity = req.body.new;
+    let amount = opportunity.Amount;
+
+    if (!amount) return res.json(500);
+    try {
+        const data = new URLSearchParams({
+            'quote_value': amount
+        });
+    
+        var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${opportunity.whatconverts_lead_id__c}`,
+            data,
+            {auth: {
+                username: WHATCONVERTS_API_TOKEN,
+                password: WHATCONVERTS_API_SECRET
+            }}
+        );
+        return res.json(200)
+    } catch (error) {
+        console.log(error);
+        return res.json(200)
+    }
+});
 
 async function createSalesForceObject(object, data) {
     try {
