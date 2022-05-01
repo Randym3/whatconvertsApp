@@ -101,9 +101,9 @@ app.post('/webhook/salesforce/lead/update', async function(req, res) {
 
 // runs every time an opportunity is created or updated
 app.post("/webhook/salesforce/opportunity", async function(req, res) {
-    let opportunity = req.body.new;
+    let opportunity = req.body.new[0];
     let amount = opportunity.Amount;
-    console.log(opportunity);
+    console.log(amount);
     if (!amount) return res.json(500);
     try {
         const data = new URLSearchParams({
