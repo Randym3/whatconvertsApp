@@ -40,14 +40,14 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
                 password: WHATCONVERTS_API_SECRET
             }}
         );
-        return res.status(200).json(whatconvertsRes)
+        return res.send(200)
     } catch (error) {
         console.log(error)
-        return res.status(500).json(error);
+        return res.send(500);
     }    
 });
 
-app.post('/webhook/salesforce/lead/update', async function(req, res){
+app.post('/webhook/salesforce/lead/update', async function(req, res) {
     let newLead = req.body.new;
     let oldLead = req.body.old;
 
@@ -60,7 +60,7 @@ app.post('/webhook/salesforce/lead/update', async function(req, res){
     }
     try {
         //if there is a new contact or opportunity associated to this lead on salesforce, lets update whatconverts lead with relevant info.
-        const data = URLSearchParams({
+        const data = new URLSearchParams({
             'quotable': "yes"
         });
 
@@ -71,10 +71,10 @@ app.post('/webhook/salesforce/lead/update', async function(req, res){
                 password: WHATCONVERTS_API_SECRET
             }}
         );
-        return res.status(200).json(whatconvertsRes)
+        return res.send(200)
     } catch (error) {
         console.log(error)
-        return res.status(500).json(error)
+        return res.send(500)
     }
 
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
@@ -90,11 +90,12 @@ app.post('/webhook/salesforce/lead/update', async function(req, res){
 
 // runs every time an opportunity is created or updated
 app.post("/webhook/salesforce/opportunity", async function(req, res) {
-    let opportunity = req.body.new;
+    console.log(req.body);
+    // let opportunity = req.body.new;
     // let amount = opportunity.Amount;
     // ...(opportunity.Amount && { 'quote_value': opportunity.Amount }),
-    console.log(opportunity);
-    res.status(200).json(opportunity);
+    // console.log(opportunity);
+    return res.send(200)
 })
 
 async function createSalesForceObject(object, data) {
@@ -107,6 +108,7 @@ async function createSalesForceObject(object, data) {
         return false;
     }
 }
+
 async function findSalesForceLeadByEmail(email) {
     try {
         var records = await salesforceConn.sobject("Lead").find({
