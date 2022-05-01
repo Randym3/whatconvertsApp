@@ -105,6 +105,7 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
     let amount = opportunity.Amount;
     let whatConvertsId = opportunity.whatconverts_lead_id__c;
     console.log(whatConvertsId);
+    console.log(typeof whatConvertsId);
     if (!whatConvertsId) return res.status(500).json({message: "whatConvertsId not set"});
     if (!amount) return res.status(500).json({message: "amount not set"});
     try {
