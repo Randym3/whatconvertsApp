@@ -113,7 +113,7 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
             'quote_value': amount
         });
     
-        var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${opportunity.whatConvertsId}`,
+        var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatConvertsId}`,
             data,
             {auth: {
                 username: WHATCONVERTS_API_TOKEN,
