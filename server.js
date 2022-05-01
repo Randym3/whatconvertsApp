@@ -104,15 +104,16 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
     let opportunity = req.body.new[0];
     let amount = opportunity.Amount;
     let whatConvertsId = opportunity.whatconverts_lead_id__c;
-    console.log(whatConvertsId);
-    console.log(typeof whatConvertsId);
+    let stageName = opportunity.StageName;
+
     if (!whatConvertsId) return res.status(500).json({message: "whatConvertsId not set"});
     if (!amount) return res.status(500).json({message: "amount not set"});
     try {
         const data = new URLSearchParams({
-            'quote_value': amount
+            'quote_value': amount,
+            ...((stageName && stageName == 'Closed Won') && {'sales_value': amount})
         });
-    
+
         var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatConvertsId}`,
             data,
             {auth: {
@@ -120,7 +121,7 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
                 password: WHATCONVERTS_API_SECRET
             }}
         );
-        console.log(whatconvertsRes);
+
         return res.json(200)
     } catch (error) {
         console.log(error);
