@@ -4,22 +4,10 @@ const { PORT,WHATCONVERTS_API_SECRET, WHATCONVERTS_API_TOKEN, WHATCONVERS_API_UR
 const cors = require("cors");
 const axios = require('axios');
 const { salesforceConn } = require("./helpers/salesforceConnection")
-const nodemailer = require('nodemailer');
 
 app.use(express.json())
 app.use(cors());
 
-
-
-async function findSalesForceLeadByEmail(email) {
-    var records = await salesforceConn.sobject("Lead")
-        .find({Email: email})
-        .execute(function(err, records) {
-            if (err) { return res.status(500).json(err) }
-            return records
-        });
-    return records.length
-}
 
 app.all('/', function(req, res){
     console.log("connected");
@@ -37,33 +25,26 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
         Description: whatconvertsLead.additional_fields['Message'],
         whatconverts_lead_id__c: whatconvertsLead.lead_id
     }
+    var createRes = await createSalesForceObject("Lead", leadDetails);
+    if (!createRes) return res.status(500).json({message: "something went wrong while creating salesforce object"});
 
-    var createRes = await salesforceConn.sobject("Lead").create(leadDetails, function(err, ret) {
-        if (err || !ret.success) {
-            console.log(err);
-            return res.status(500).json(err);
-        }
-        //Lead was succesfully created on Salesforce
-        return ret
-    });
-    var salesForceRes = await findSalesForceLeadByEmail(whatconvertsLead.additional_fields['Email']);
+    var salesForceRecords = await findSalesForceLeadByEmail(whatconvertsLead.additional_fields['Email']);
+    if (!salesForceRecords.length) return res.status(404).json({message: "Not found"});
 
     //lead found on salesforce by email, update whatconverts lead salesforce additional field to "connected"
-    if (salesForceRes) {
-        try {
-            var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatconvertsLead.lead_id}`,
-                'additional_fields[SalesForce]=Connected',
-                {auth: {
-                    username: WHATCONVERTS_API_TOKEN,
-                    password: WHATCONVERTS_API_SECRET
-                }}
-            );
-            return res.status(200)
-        } catch (error) {
-            console.log(error)
-            return res.status(500)
-        }    
-    }
+    try {
+        var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatconvertsLead.lead_id}`,
+            'additional_fields[SalesForce]=Connected',
+            {auth: {
+                username: WHATCONVERTS_API_TOKEN,
+                password: WHATCONVERTS_API_SECRET
+            }}
+        );
+        return res.status(200).json(whatconvertsRes)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(error);
+    }    
 });
 
 app.post('/webhook/salesforce/lead/update', async function(req, res){
@@ -71,27 +52,31 @@ app.post('/webhook/salesforce/lead/update', async function(req, res){
     let oldLead = req.body.old;
 
     //If the lead has a new field relating to the Contact object, lets update WhatConverts lead here.
-    console.log(oldLead[0]);
-    console.log(newLead[0]);
-    var hasNewContact = !oldLead[0].ConvertedContactId && newLead[0].ConvertedContactId;
+    var newContactId = !oldLead[0].ConvertedContactId && newLead[0].ConvertedContactId 
+        ? newLead[0].ConvertedContactId : null;
 
-    if (hasNewContact) {
-        try {
-            var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${oldLead[0].whatconverts_lead_id__c}`,
-                new URLSearchParams({ 
-                    'quotable': "yes"
-                }),
-                {auth: {
-                    username: WHATCONVERTS_API_TOKEN,
-                    password: WHATCONVERTS_API_SECRET
-                }}
-            );
-            return res.status(200).json(whatconvertsRes)
-        } catch (error) {
-            console.log(error)
-            return res.status(500).json(error)
-        }
-    }      
+    if (!newContactId) {
+        return res.status(200).json({message: "no action required"});
+    }
+    try {
+        //if there is a new contact or opportunity associated to this lead on salesforce, lets update whatconverts lead with relevant info.
+        const data = URLSearchParams({
+            'quotable': "yes"
+        });
+
+        var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${oldLead[0].whatconverts_lead_id__c}`,
+            data,
+            {auth: {
+                username: WHATCONVERTS_API_TOKEN,
+                password: WHATCONVERTS_API_SECRET
+            }}
+        );
+        return res.status(200).json(whatconvertsRes)
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json(error)
+    }
+
     // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
     //     auth: {
     //         username: WHATCONVERTS_API_TOKEN,
@@ -102,7 +87,51 @@ app.post('/webhook/salesforce/lead/update', async function(req, res){
     //     res.json(data.data);
     // }).catch(err=>console.log(err))
 });
-    
+
+// runs every time an opportunity is created or updated
+app.post("/webhook/salesforce/opportunity", async function(req, res) {
+    let opportunity = req.body.new;
+    // let amount = opportunity.Amount;
+    // ...(opportunity.Amount && { 'quote_value': opportunity.Amount }),
+    console.log(opportunity);
+    res.status(200).json(opportunity);
+})
+
+async function createSalesForceObject(object, data) {
+    try {
+        var record = await salesforceConn.sobject(object).create(data);
+        if (!record.success) return false;
+        return record;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+async function findSalesForceLeadByEmail(email) {
+    try {
+        var records = await salesforceConn.sobject("Lead").find({
+            Email: email
+        }).execute();
+        return records
+        
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+async function findSalesForceObjectById(object, id) {
+    try {
+        var record = await salesforceConn.sobject(object).retrieve(id);
+        return record;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+
+
 app.listen(PORT, () => {
   console.log(`Running on port ${PORT}!`)
 })
