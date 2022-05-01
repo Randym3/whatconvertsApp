@@ -1,33 +1,72 @@
 const jsforce = require("jsforce");
-var username = "randy@test-whatconverts.com";
-var password = "Saxxy333sVeOh0p93J7W9LnTAsF6vNxD";
-var conn = new jsforce.Connection({
+
+var username = process.env.SF_USERNAME;
+var password = process.env.SF_PASSWORD;
+var salesforceConn = new jsforce.Connection({
     instanceUrl : 'https://test391-dev-ed.lightning.force.com',
     loginUrl : 'https://login.salesforce.com'
 });
 
-conn.login(username, password, function(err, userInfo) {
+salesforceConn.login(username, password, function(err, userInfo) {
     if (err) { 
         return console.error(err); 
     }
     console.log("connected to salesforce");
-    // console.log(conn.accessToken);
-    // console.log(conn.instanceUrl);
-    // logged in user property
-    // console.log("User ID: " + userInfo.id);
-    // console.log("Org ID: " + userInfo.organizationId);
 });
 
+async function createSalesForceObject(object, data) {
+    try {
+        var record = await salesforceConn.sobject(object).create(data);
+        if (!record.success) return false;
+        return record;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
 
+async function updateSalesForceObject(object, id, data) {
+    try {
+        var record = await salesforceConn.sobject(object).update({
+            Id: id,
+            ...data
+        });
+        if (!record.success) return false;
+        return record;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
 
-//   conn.query("SELECT Id, Name, Company, Title FROM Lead WHERE Id = '00Q8b00001vWDOBEA4'", function(err, result) {
-//     if (err) { return console.error(err); }
-//     console.log(result);
-//     console.log("total : " + result.totalSize);
-//     console.log("fetched : " + result.records.length);
-//   });
+async function findSalesForceLeadByEmail(email) {
+    try {
+        var records = await salesforceConn.sobject("Lead").find({
+            Email: email
+        }).execute();
+        return records
+        
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
+
+async function findSalesForceObjectById(object, id) {
+    try {
+        var record = await salesforceConn.sobject(object).retrieve(id);
+        return record;
+    } catch (error) {
+        console.log(error);
+        return false;
+    }
+}
 
 
 module.exports = { 
-    salesforceConn: conn
+    salesforceConn,
+    createSalesForceObject,
+    updateSalesForceObject,
+    findSalesForceLeadByEmail,
+    findSalesForceObjectById
 }

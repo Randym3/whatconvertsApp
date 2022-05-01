@@ -1,9 +1,10 @@
 const express = require('express');
 const app = express();
+require('dotenv').config()
 const { PORT,WHATCONVERTS_API_SECRET, WHATCONVERTS_API_TOKEN, WHATCONVERS_API_URL } = require("./config");
 const cors = require("cors");
 const axios = require('axios');
-const { salesforceConn } = require("./helpers/salesforceConnection")
+const { createSalesForceObject, updateSalesForceObject, findSalesForceLeadByEmail } = require("./helpers/salesforceConnection")
 
 app.use(express.json())
 app.use(cors());
@@ -29,12 +30,13 @@ app.post('/webhook/whatconverts/create', async function(req, res) {
     if (!createRes) return res.status(500).json({message: "something went wrong while creating salesforce object"});
 
     var salesForceRecords = await findSalesForceLeadByEmail(whatconvertsLead.additional_fields['Email']);
-    if (!salesForceRecords.length) return res.status(404).json({message: "Not found"});
+    var salesForceStatus = "Connected";
+    if (!salesForceRecords.length) salesForceStatus = "Failed";
 
     //lead found on salesforce by email, update whatconverts lead salesforce additional field to "connected"
     try {
         var whatconvertsRes = await axios.post(`${WHATCONVERS_API_URL}/api/v1/leads/${whatconvertsLead.lead_id}`,
-            'additional_fields[SalesForce]=Connected',
+            'additional_fields[SalesForce]=' + salesForceStatus,
             {auth: {
                 username: WHATCONVERTS_API_TOKEN,
                 password: WHATCONVERTS_API_SECRET
@@ -87,16 +89,6 @@ app.post('/webhook/salesforce/lead/update', async function(req, res) {
         console.log(error)
         return res.json(500)
     }
-
-    // axios.get('https://app.whatconverts.com/api/v1/leads/72142024', {
-    //     auth: {
-    //         username: WHATCONVERTS_API_TOKEN,
-    //         password: WHATCONVERTS_API_SECRET
-    //     }
-    // }).then(data => {
-    //     console.log(data.data);
-    //     res.json(data.data);
-    // }).catch(err=>console.log(err))
 });
 
 // runs every time an opportunity is created or updated
@@ -129,59 +121,35 @@ app.post("/webhook/salesforce/opportunity", async function(req, res) {
     }
 });
 
-async function createSalesForceObject(object, data) {
-    try {
-        var record = await salesforceConn.sobject(object).create(data);
-        if (!record.success) return false;
-        return record;
-    } catch (error) {
-        console.log(error);
-        return false;
-    }
-}
+async function pollLeads() {
+    var date = new Date();
+    date.setDate(date.getDate() - 1);
+    date = date.toISOString().split('T')[0];
 
-async function updateSalesForceObject(object, id, data) {
     try {
-        var record = await salesforceConn.sobject(object).update({
-            Id: id,
-            ...data
+        var res = await axios.get(`${WHATCONVERS_API_URL}/api/v1/leads?start_date=${date}`,
+            {auth: {
+                username: WHATCONVERTS_API_TOKEN,
+                password: WHATCONVERTS_API_SECRET
+            }
         });
-        if (!record.success) return false;
-        return record;
+        var unprocessedCount = 0;
+        var leads = res.data.leads;
+            
+        leads.forEach(cur => {
+            unprocessedCount += (cur.additional_fields.SalesForce == "Pending" ? 1 : 0)
+            console.log(cur.additional_fields.SalesForce)
+        });
+        if (unprocessedCount > 0 ) {
+            //here we can email a manager or developer..
+        }
     } catch (error) {
         console.log(error);
-        return false;
     }
 }
-
-async function findSalesForceLeadByEmail(email) {
-    try {
-        var records = await salesforceConn.sobject("Lead").find({
-            Email: email
-        }).execute();
-        return records
-        
-    } catch (error) {
-        console.log(error);
-        return false;
-    }
-}
-
-async function findSalesForceObjectById(object, id) {
-    try {
-        var record = await salesforceConn.sobject(object).retrieve(id);
-        return record;
-    } catch (error) {
-        console.log(error);
-        return false;
-    }
-}
-
-
 
 app.listen(PORT, () => {
   console.log(`Running on port ${PORT}!`)
 })
-// ConvertedAccountId
-// ConvertedOpportunityId
-// ConvertedContactId
+
+
