@@ -103,7 +103,7 @@ app.post('/webhook/salesforce/lead/update', async function(req, res) {
 app.post("/webhook/salesforce/opportunity", async function(req, res) {
     let opportunity = req.body.new;
     let amount = opportunity.Amount;
-
+    console.log(opportunity);
     if (!amount) return res.json(500);
     try {
         const data = new URLSearchParams({
